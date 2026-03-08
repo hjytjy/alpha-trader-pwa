@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Alpha">
+<meta name="theme-color" content="#0a0a0f">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Alpha Trader</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap');
+:root {
+  --bg:#0a0a0f; --bg2:#0f0f18; --bg3:#14141f;
+  --border:#1e1e2e; --border2:#2a2a3e;
+  --text:#e8e8f0; --muted:#5a5a78;
+  --accent:#00e5ff; --accent2:#ff4d6d; --accent3:#b8ff57;
+  --purple:#c084fc; --gold:#f59e0b;
+  --win:#b8ff57; --loss:#ff4d6d;
+  --mono:'Space Mono',monospace; --sans:'Syne',sans-serif;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--mono);overflow:hidden;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+/* LAYOUT */
+.app{display:flex;flex-direction:column;height:100vh;height:100dvh;}
+.topbar{height:52px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px;flex-shrink:0;padding-top:env(safe-area-inset-top,0);}
+.topbar-logo{font-family:var(--sans);font-weight:800;font-size:15px;letter-spacing:1px;background:linear-gradient(135deg,var(--purple),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.topbar-right{display:flex;align-items:center;gap:8px;}
+#dot{width:7px;height:7px;border-radius:50%;background:var(--loss);transition:background 0.3s;}
+#dot.online{background:var(--win);}
+#dot-label{font-size:9px;color:var(--muted);letter-spacing:1px;}
+.body{display:flex;flex:1;overflow:hidden;}
+
+/* SIDEBAR */
+.sidebar{width:56px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:8px 0;gap:4px;overflow:hidden;flex-shrink:0;}
+.nav-btn{width:44px;height:44px;border:none;background:none;color:var(--muted);cursor:pointer;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:all 0.2s;position:relative;font-family:var(--mono);}
+.nav-btn:hover{background:var(--border);color:var(--text);}
+.nav-btn.active{background:rgba(192,132,252,0.12);color:var(--purple);}
+.nav-btn.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:2px;height:24px;background:var(--purple);border-radius:0 2px 2px 0;}
+.nav-icon{font-size:16px;line-height:1;}
+.nav-label{font-size:7px;letter-spacing:1px;text-transform:uppercase;}
+
+/* MAIN */
+.main{flex:1;overflow:hidden;display:flex;flex-direction:column;}
+.panel{display:none;flex:1;overflow-y:auto;padding:16px;flex-direction:column;gap:16px;}
+.panel.active{display:flex;}
+
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.card-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.card-title{font-family:var(--sans);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;}
+.card-body{padding:16px;}
+
+/* BUTTONS */
+.btn{font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:8px 16px;border-radius:4px;border:1px solid var(--border2);cursor:pointer;background:none;color:var(--muted);transition:all 0.2s;}
+.btn:hover{color:var(--text);border-color:var(--text);}
+.btn:active{transform:scale(0.97);}
+.btn-primary{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:700;}
+.btn-purple{background:var(--purple);color:var(--bg);border-color:var(--purple);font-weight:700;}
+.btn-gold{background:var(--gold);color:var(--bg);border-color:var(--gold);font-weight:700;}
+.btn-danger{border-color:rgba(255,77,109,0.4);color:var(--loss);}
+.btn-sm{padding:4px 10px;font-size:9px;}
+.btn-block{width:100%;}
+
+/* INPUTS */
+input,textarea,select{background:var(--bg3);border:1px solid var(--border2);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:11px;padding:9px 12px;width:100%;outline:none;transition:border 0.2s;}
+input:focus,textarea:focus,select:focus{border-color:var(--purple);}
+select option{background:var(--bg3);}
+.form-group{margin-bottom:12px;}
+.form-group label{font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:6px;}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;}
+.stat-label{font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;}
+.stat-value{font-family:var(--sans);font-size:22px;font-weight:800;}
+
+/* BADGES */
+.badge{font-size:9px;padding:3px 7px;border-radius:3px;font-weight:700;letter-spacing:1px;}
+.badge-win{background:rgba(184,255,87,0.15);color:var(--win);border:1px solid rgba(184,255,87,0.3);}
+.badge-loss{background:rgba(255,77,109,0.15);color:var(--loss);border:1px solid rgba(255,77,109,0.3);}
+.badge-be{background:rgba(90,90,120,0.3);color:var(--muted);border:1px solid var(--border);}
+
+/* TRADE CARDS */
+.trade-gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+.trade-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;cursor:pointer;transition:all 0.2s;}
+.trade-card:active{transform:scale(0.98);}
+.trade-card.winner{border-color:rgba(184,255,87,0.4);}
+.trade-card.loser{border-color:rgba(255,77,109,0.4);}
+.tc-img{width:100%;height:100px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:20px;}
+.tc-img img{width:100%;height:100px;object-fit:cover;}
+.tc-body{padding:10px;}
+.tc-title{font-family:var(--sans);font-size:11px;font-weight:700;margin-bottom:6px;line-height:1.3;}
+.tc-meta{display:flex;align-items:center;justify-content:space-between;}
+.tc-pnl{font-size:11px;font-weight:700;}
+.tc-pnl.pos{color:var(--win);}
+.tc-pnl.neg{color:var(--loss);}
+
+/* CHAT */
+.chat-wrap{display:flex;flex-direction:column;height:100%;overflow:hidden;}
+.chat-header{padding:12px 16px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;}
+.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px;}
+.msg{display:flex;flex-direction:column;gap:5px;}
+.msg.user{align-items:flex-end;}
+.msg.ai{align-items:flex-start;}
+.msg-label{font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+.msg-bubble{max-width:85%;padding:12px 16px;border-radius:8px;font-size:12px;line-height:1.7;}
+.msg.user .msg-bubble{background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.2);}
+.msg.ai .msg-bubble{background:var(--bg2);border:1px solid var(--border);}
+.chat-footer{padding:10px;border-top:1px solid var(--border);background:var(--bg2);flex-shrink:0;padding-bottom:calc(10px + var(--safe-bottom));}
+.chat-row{display:flex;gap:8px;align-items:flex-end;}
+.chat-row textarea{height:44px;resize:none;flex:1;}
+.typing-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--muted);animation:blink 1.4s infinite;}
+.typing-dot:nth-child(2){animation-delay:0.2s;}
+.typing-dot:nth-child(3){animation-delay:0.4s;}
+@keyframes blink{0%,80%,100%{opacity:0.2}40%{opacity:1}}
+.alpha-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+
+/* MODAL */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:1000;overflow-y:auto;padding:16px;}
+.modal.open{display:block;}
+.modal-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;max-width:600px;margin:0 auto;}
+.modal-header{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.modal-body{padding:16px;}
+.modal-footer{padding:16px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;}
+
+/* POMO */
+.pomo-display{font-family:var(--mono);font-size:48px;font-weight:700;text-align:center;letter-spacing:-2px;padding:12px 0;}
+.pomo-bar-track{background:var(--border);border-radius:2px;height:3px;margin:6px 0 14px;}
+.pomo-bar-fill{height:3px;border-radius:2px;background:var(--purple);transition:width 0.5s linear;}
+
+/* ALPHA EYE */
+.eye-item{background:var(--bg3);border-radius:6px;padding:10px 14px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px;font-size:11px;line-height:1.6;}
+.eye-item.pattern{border-left:2px solid var(--accent);}
+.eye-item.mistake{border-left:2px solid var(--loss);}
+
+/* SYNC STATUS */
+#sync-status{font-size:9px;color:var(--muted);letter-spacing:1px;}
+
+/* JOURNEY GRID */
+.journey-grid{display:grid;grid-template-columns:1fr;gap:14px;}
+@media(min-width:600px){.journey-grid{grid-template-columns:1fr 1fr;}}
+
+/* TRAIN */
+.train-grid{display:grid;grid-template-columns:1fr;gap:14px;}
+@media(min-width:600px){.train-grid{grid-template-columns:1fr 1fr;}}
+
+/* WEEK GRID */
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px;}
+.week-cell{aspect-ratio:1;border-radius:4px;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:8px;cursor:pointer;transition:all 0.2s;}
+.week-cell.done{background:rgba(192,132,252,0.25);border-color:var(--purple);color:var(--purple);}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn 0.25s ease;}
+
+/* LOADING OVERLAY */
+#loading{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:12px;}
+#loading .logo{font-family:var(--sans);font-size:28px;font-weight:800;background:linear-gradient(135deg,var(--purple),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+#loading .sub{font-size:9px;color:var(--muted);letter-spacing:3px;}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="logo">ALPHA</div>
+  <div class="sub">SYNCING DATA...</div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app" style="display:none;">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-logo">ALPHA <span style="font-size:9px;color:var(--muted);font-family:var(--mono);font-weight:400;letter-spacing:2px;">ICT CISD</span></div>
+    <div class="topbar-right">
+      <div id="dot"></div>
+      <div id="dot-label">CHECKING...</div>
+      <span id="sync-status">⟳ SYNCED</span>
+    </div>
+  </div>
+
+  <div class="body">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <button class="nav-btn active" data-panel="dashboard" onclick="nav('dashboard')">
+        <span class="nav-icon">◈</span><span class="nav-label">Dash</span>
+      </button>
+      <button class="nav-btn" data-panel="journal" onclick="nav('journal')">
+        <span class="nav-icon">◎</span><span class="nav-label">Log</span>
+      </button>
+      <button class="nav-btn" data-panel="alpha" onclick="nav('alpha')">
+        <span class="nav-icon">α</span><span class="nav-label">Alpha</span>
+      </button>
+      <button class="nav-btn" data-panel="journey" onclick="nav('journey')">
+        <span class="nav-icon">◐</span><span class="nav-label">Journey</span>
+      </button>
+      <button class="nav-btn" data-panel="train" onclick="nav('train')">
+        <span class="nav-icon">⚡</span><span class="nav-label">Train</span>
+      </button>
+      <button class="nav-btn" data-panel="kb" onclick="nav('kb')">
+        <span class="nav-icon">⊕</span><span class="nav-label">KB</span>
+      </button>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+
+      <!-- DASHBOARD -->
+      <div id="panel-dashboard" class="panel active">
+        <div class="stats-grid" id="dash-stats"></div>
+        <div class="card">
+          <div class="card-header"><div class="card-title" style="color:var(--accent);">Alpha's Eye — Patterns</div></div>
+          <div class="card-body" id="eye-patterns"><div style="font-size:10px;color:var(--muted);">No patterns yet.</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title" style="color:var(--loss);">Alpha's Eye — Mistakes</div></div>
+          <div class="card-body" id="eye-mistakes"><div style="font-size:10px;color:var(--muted);">No mistakes yet.</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Recent Trades</div></div>
+          <div class="card-body" id="recent-trades"></div>
+        </div>
+      </div>
+
+      <!-- JOURNAL -->
+      <div id="panel-journal" class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+          <div style="font-family:var(--sans);font-size:16px;font-weight:800;">Journal</div>
+          <button class="btn btn-primary btn-sm" onclick="openLogModal()">+ Log Trade</button>
+        </div>
+        <div class="trade-gallery" id="trade-gallery"></div>
+      </div>
+
+      <!-- ALPHA -->
+      <div id="panel-alpha" class="panel" style="padding:0;overflow:hidden;">
+        <div class="chat-wrap">
+          <div class="chat-header">
+            <div style="font-family:var(--sans);font-size:13px;font-weight:800;color:var(--purple);">Alpha <span style="font-size:9px;color:var(--muted);font-family:var(--mono);font-weight:400;letter-spacing:2px;">ICT AGENT</span></div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-sm" onclick="morningBriefing()" style="border-color:var(--accent);color:var(--accent);font-size:8px;">☀ Brief</button>
+              <button class="btn btn-sm" onclick="postSessionDebrief()" style="border-color:var(--gold);color:var(--gold);font-size:8px;">🌙 Debrief</button>
+              <button class="btn btn-sm btn-danger" onclick="clearChat()" style="font-size:8px;">Clear</button>
+            </div>
+          </div>
+          <div class="chat-messages" id="chat-messages">
+            <div class="msg ai fade-in">
+              <div class="msg-label">Alpha</div>
+              <div class="msg-bubble">GM. I'm Alpha — your ICT trading agent. I know your full model: CISD, SMT, OB/BRK, profiles, DOL philosophy. Ask me anything.</div>
+            </div>
+          </div>
+          <div class="chat-footer">
+            <div class="chat-row">
+              <textarea id="chat-input" placeholder="Ask Alpha..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}"></textarea>
+              <button class="btn btn-purple" onclick="sendMsg()" style="height:44px;padding:0 16px;white-space:nowrap;">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- JOURNEY -->
+      <div id="panel-journey" class="panel">
+        <div style="text-align:center;padding:10px 0 16px;flex-shrink:0;">
+          <div style="font-family:var(--sans);font-size:20px;font-weight:800;background:linear-gradient(135deg,var(--purple),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">"What If I Can Pull Off This Miracle"</div>
+          <div style="font-size:11px;font-weight:600;color:var(--gold);margin-top:6px;">Allah is watching — Show Him you want this more than Anyone.</div>
+        </div>
+        <div class="journey-grid">
+          <!-- POMODORO -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title" style="color:var(--purple);">Focus Timer</div>
+              <div style="font-size:9px;color:var(--muted);">POMODORO</div>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label>Subject</label>
+                <select id="pomo-select"><option value="">— Select —</option></select>
+              </div>
+              <div style="display:flex;gap:8px;margin-bottom:12px;">
+                <input type="text" id="pomo-new" placeholder="New subject..." style="flex:1;">
+                <button class="btn btn-sm" onclick="addPomoSubject()" style="border-color:var(--purple);color:var(--purple);white-space:nowrap;">+ Add</button>
+              </div>
+              <div class="pomo-display" id="pomo-display">25:00</div>
+              <div style="font-size:9px;color:var(--purple);letter-spacing:3px;text-align:center;margin-top:-6px;margin-bottom:8px;" id="pomo-phase">● FOCUS</div>
+              <div class="pomo-bar-track"><div class="pomo-bar-fill" id="pomo-bar" style="width:0%"></div></div>
+              <div style="display:flex;gap:8px;justify-content:center;margin-bottom:12px;">
+                <button class="btn btn-purple" id="pomo-btn" onclick="togglePomo()" style="min-width:90px;">▶ Start</button>
+                <button class="btn btn-sm" onclick="resetPomo()">↺ Reset</button>
+              </div>
+              <div style="display:flex;gap:12px;">
+                <div class="form-group" style="flex:1;margin:0;">
+                  <label>Focus (min)</label>
+                  <input type="number" id="pomo-focus" value="25" min="1" max="90" oninput="resetPomo()">
+                </div>
+                <div class="form-group" style="flex:1;margin:0;">
+                  <label>Break (min)</label>
+                  <input type="number" id="pomo-break" value="5" min="1" max="30" oninput="resetPomo()">
+                </div>
+              </div>
+              <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:10px;" id="pomo-sessions">Sessions today: 0</div>
+            </div>
+          </div>
+          <!-- TASKS -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title" style="color:var(--accent3);">Tasks</div>
+              <div style="font-size:9px;color:var(--muted);" id="tasks-count"></div>
+            </div>
+            <div class="card-body">
+              <div style="display:flex;gap:8px;margin-bottom:12px;">
+                <input type="text" id="task-input" placeholder="Add task..." onkeydown="if(event.key==='Enter')addTask()">
+                <button class="btn btn-sm btn-primary" onclick="addTask()">+ Add</button>
+              </div>
+              <div id="task-list"></div>
+            </div>
+          </div>
+          <!-- HABITS -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title" style="color:var(--gold);">Habits</div>
+              <div style="font-size:9px;color:var(--muted);" id="habits-count"></div>
+            </div>
+            <div class="card-body">
+              <div style="display:flex;gap:8px;margin-bottom:12px;">
+                <input type="text" id="habit-input" placeholder="New habit..." onkeydown="if(event.key==='Enter')addHabit()">
+                <button class="btn btn-sm btn-gold" onclick="addHabit()">+ Add</button>
+              </div>
+              <div id="habit-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRAIN -->
+      <div id="panel-train" class="panel">
+        <div style="flex-shrink:0;margin-bottom:8px;">
+          <div style="font-family:var(--sans);font-size:16px;font-weight:800;">Train</div>
+          <div style="font-size:9px;color:var(--muted);letter-spacing:2px;margin-top:2px;">SHARPEN YOUR EDGE</div>
+        </div>
+        <div class="train-grid">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title" style="color:var(--accent);">⚡ ICT Quiz</div>
+              <button class="btn btn-sm" onclick="newQuestion()" style="border-color:var(--accent);color:var(--accent);">New Question</button>
+            </div>
+            <div class="card-body">
+              <div id="quiz-q" style="font-size:11px;color:var(--text);line-height:1.8;margin-bottom:12px;min-height:50px;background:var(--bg3);padding:12px;border-radius:6px;border:1px solid var(--border2);">Press New Question to start.</div>
+              <textarea id="quiz-a" placeholder="Your answer..." style="height:80px;resize:none;display:none;margin-bottom:8px;"></textarea>
+              <button id="quiz-submit" class="btn btn-primary btn-block" onclick="submitAnswer()" style="display:none;margin-bottom:10px;">Submit Answer</button>
+              <div id="quiz-feedback" style="font-size:11px;line-height:1.8;color:var(--muted);"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title" style="color:var(--gold);">📋 Weekly Review</div>
+              <button class="btn btn-sm" onclick="weeklyReview()" style="border-color:var(--gold);color:var(--gold);">Generate</button>
+            </div>
+            <div class="card-body" style="max-height:400px;overflow-y:auto;">
+              <div id="review-content" style="font-size:11px;color:var(--muted);line-height:1.9;">Hit Generate — Alpha reviews your full week.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KB -->
+      <div id="panel-kb" class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+          <div>
+            <div style="font-family:var(--sans);font-size:16px;font-weight:800;">Knowledge Base</div>
+            <div style="font-size:8px;color:var(--muted);letter-spacing:2px;margin-top:2px;">ALPHA READS THIS EVERY RESPONSE</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openKBModal()">+ Add Entry</button>
+        </div>
+        <div id="kb-list"></div>
+      </div>
+
+    </div><!-- /main -->
+  </div><!-- /body -->
+</div><!-- /app -->
+
+<!-- LOG TRADE MODAL -->
+<div class="modal" id="log-modal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div style="font-family:var(--sans);font-size:14px;font-weight:800;" id="log-title">Log Trade</div>
+      <button class="btn btn-sm btn-danger" onclick="closeLogModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label>Date</label><input type="date" id="lt-date"></div>
+      <div class="form-group"><label>Trade Title / Setup</label><input type="text" id="lt-title" placeholder="e.g. Thursday HOW Reversal..."></div>
+      <div class="form-group"><label>HTF Bias & Narrative</label><textarea id="lt-bias" style="height:70px;resize:none;" placeholder="Daily > 4H > 1H bias, weekly profile, DOL..."></textarea></div>
+      <div class="form-group"><label>Why Valid?</label><textarea id="lt-valid" style="height:60px;resize:none;" placeholder="What made this trade valid..."></textarea></div>
+      <div class="form-group">
+        <label>Result</label>
+        <select id="lt-result">
+          <option value="win">Win</option>
+          <option value="loss">Loss</option>
+          <option value="be">Break Even</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="form-group"><label>PnL ($)</label><input type="number" id="lt-pnl" placeholder="246"></div>
+        <div class="form-group"><label>Daily Profile</label>
+          <select id="lt-profile">
+            <option value="">— Select —</option>
+            <option>London Classic</option><option>London Retracement</option>
+            <option>NYO Reversal</option><option>NYO Manipulation PO3</option>
+            <option>NYO Protraction</option><option>Seek & Destroy</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label>Mistakes</label><textarea id="lt-mistakes" style="height:60px;resize:none;" placeholder="What went wrong..."></textarea></div>
+      <div class="form-group"><label>Lesson (Gold)</label><textarea id="lt-lesson" style="height:60px;resize:none;" placeholder="Key takeaway..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeLogModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveTrade()">Save Trade</button>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW TRADE MODAL -->
+<div class="modal" id="view-modal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div style="font-family:var(--sans);font-size:13px;font-weight:800;" id="view-title"></div>
+      <button class="btn btn-sm btn-danger" onclick="closeViewModal()">✕</button>
+    </div>
+    <div class="modal-body" id="view-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-sm btn-danger" onclick="deleteTrade()">Delete</button>
+      <button class="btn btn-sm" onclick="closeViewModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- KB MODAL -->
+<div class="modal" id="kb-modal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div style="font-family:var(--sans);font-size:14px;font-weight:800;">Add KB Entry</div>
+      <button class="btn btn-sm btn-danger" onclick="closeKBModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label>Type</label>
+        <select id="kb-type"><option value="concept">Concept</option><option value="rule">Rule</option><option value="note">Note</option></select>
+      </div>
+      <div class="form-group"><label>Title</label><input type="text" id="kb-title" placeholder="e.g. CISD Multi-TF Rule"></div>
+      <div class="form-group"><label>Content</label><textarea id="kb-content" style="height:100px;resize:none;" placeholder="Explain the concept or rule..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeKBModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveKB()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// SUPABASE CONFIG
+// ═══════════════════════════════════════════════
+const SUPABASE_URL = 'https://hmefksnwvsafcsnxtdnn.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhtZWZrc253dnNhZmNzbnh0ZG5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NjQ4MzAsImV4cCI6MjA4ODU0MDgzMH0.jyQe8FRGDxvg2CRJV5g9jf_xxu8qKxzv5z-xt5OU6z0';
+
+// ═══════════════════════════════════════════════
+// OLLAMA CLOUD CONFIG
+// ═══════════════════════════════════════════════
+const AI_KEY = 'f68ecd88ae114678ad6a8c0898360c02.n7kWW3t17BpgEfnmwj4Z7Ews';
+const AI_MODELS = ['qwen3.5:35b','qwen3.5:27b','gemma3:27b','qwen3.5:9b'];
+
+// ═══════════════════════════════════════════════
+// SUPABASE HELPERS
+// ═══════════════════════════════════════════════
+async function sb(method, table, body, params='') {
+  const url = `${SUPABASE_URL}/rest/v1/${table}${params}`;
+  const res = await fetch(url, {
+    method,
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': method === 'POST' ? 'return=representation' : ''
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Supabase ${method} ${table}: ${err}`);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let TRADES = [];
+let KB_ENTRIES = [];
+let MEMORY = { patterns: [], mistakes: [] };
+let STATE = { tasks: [], habits: {}, pomodoro: {} };
+let currentViewId = null;
+let chatHistory = [];
+let currentQuiz = '';
+let pomoRunning = false;
+let pomoEndTime = null;
+let pomoPhase = 'focus';
+let pomoSecondsLeft = 25 * 60;
+let pomoTotalSeconds = 25 * 60;
+let pomoSubjects = {};
+
+// ═══════════════════════════════════════════════
+// INIT — Load all data from Supabase
+// ═══════════════════════════════════════════════
+async function init() {
+  try {
+    // Load all tables in parallel
+    const [trades, kb, memory, state] = await Promise.all([
+      sb('GET','trades','',`?order=date.desc`),
+      sb('GET','knowledge','',`?order=created_at.asc`),
+      sb('GET','alpha_memory','',`?order=created_at.asc`),
+      sb('GET','app_state','',`?select=key,value`)
+    ]);
+
+    TRADES = trades || [];
+    KB_ENTRIES = kb || [];
+
+    const patterns = (memory||[]).filter(m => m.type === 'pattern').map(m => m.content);
+    const mistakes = (memory||[]).filter(m => m.type === 'mistake').map(m => m.content);
+    MEMORY = { patterns, mistakes, _raw: memory || [] };
+
+    const stateMap = {};
+    (state||[]).forEach(s => { stateMap[s.key] = s.value; });
+    STATE = {
+      tasks: stateMap.tasks || [],
+      habits: stateMap.habits || {},
+      pomodoro: stateMap.pomodoro || {}
+    };
+    pomoSubjects = STATE.pomodoro;
+
+    // Hide loading, show app
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+
+    renderDashboard();
+    renderGallery();
+    renderKB();
+    renderTasks();
+    renderHabits();
+    renderPomoSelect();
+    checkAI();
+
+    setSyncStatus('✓ SYNCED');
+  } catch(e) {
+    document.getElementById('loading').querySelector('.sub').textContent = 'ERROR: ' + e.message;
+    console.error(e);
+  }
+}
+
+function setSyncStatus(msg) {
+  document.getElementById('sync-status').textContent = msg;
+}
+
+// ═══════════════════════════════════════════════
+// SAVE HELPERS
+// ═══════════════════════════════════════════════
+async function saveState(key, value) {
+  try {
+    await sb('POST','app_state',{key, value, updated_at: new Date().toISOString()}, `?on_conflict=key`);
+  } catch(e) { console.error('saveState:', e); }
+}
+
+// ═══════════════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════════════
+function nav(panel) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + panel).classList.add('active');
+  document.querySelector(`.nav-btn[data-panel="${panel}"]`).classList.add('active');
+  if (panel === 'journey') { renderPomoSelect(); renderTasks(); renderHabits(); }
+}
+
+// ═══════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════
+function renderDashboard() {
+  const wins = TRADES.filter(t => t.result === 'win').length;
+  const losses = TRADES.filter(t => t.result === 'loss').length;
+  const total = TRADES.length;
+  const pnl = TRADES.reduce((a,t) => a + (parseFloat(t.pnl)||0), 0);
+  const wr = total > 0 ? ((wins/total)*100).toFixed(1) : '—';
+  const today = new Date().toISOString().split('T')[0];
+  const todayTrades = TRADES.filter(t => t.date === today);
+  const todayWins = todayTrades.filter(t => t.result === 'win').length;
+  const todayWR = todayTrades.length > 0 ? ((todayWins/todayTrades.length)*100).toFixed(0)+'%' : '—';
+
+  document.getElementById('dash-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Trades</div><div class="stat-value">${total}</div></div>
+    <div class="stat-card"><div class="stat-label">Win Rate</div><div class="stat-value" style="color:var(--win)">${total>0?wr+'%':'—'}</div></div>
+    <div class="stat-card"><div class="stat-label">Today WR</div><div class="stat-value">${todayWR}</div></div>
+    <div class="stat-card"><div class="stat-label">Total PnL</div><div class="stat-value" style="color:${pnl>=0?'var(--win)':'var(--loss)'}">${pnl>=0?'+':''}$${Math.abs(pnl).toFixed(0)}</div></div>
+    <div class="stat-card"><div class="stat-label">Wins</div><div class="stat-value" style="color:var(--win)">${wins}</div></div>
+    <div class="stat-card"><div class="stat-label">Losses</div><div class="stat-value" style="color:var(--loss)">${losses}</div></div>
+  `;
+
+  // Eye patterns
+  const pEl = document.getElementById('eye-patterns');
+  if (MEMORY.patterns.length > 0) {
+    pEl.innerHTML = MEMORY.patterns.map((p,i) => `
+      <div class="eye-item pattern">
+        <span>✓ ${p}</span>
+        <button onclick="deleteMemory('pattern',${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;flex-shrink:0;">×</button>
+      </div>`).join('');
+  } else {
+    pEl.innerHTML = '<div style="font-size:10px;color:var(--muted);">No patterns yet.</div>';
+  }
+
+  const mEl = document.getElementById('eye-mistakes');
+  if (MEMORY.mistakes.length > 0) {
+    mEl.innerHTML = MEMORY.mistakes.map((m,i) => `
+      <div class="eye-item mistake">
+        <span>✗ ${m}</span>
+        <button onclick="deleteMemory('mistake',${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;flex-shrink:0;">×</button>
+      </div>`).join('');
+  } else {
+    mEl.innerHTML = '<div style="font-size:10px;color:var(--muted);">No mistakes yet.</div>';
+  }
+
+  // Recent trades
+  const recent = TRADES.slice(0,5);
+  document.getElementById('recent-trades').innerHTML = recent.length === 0
+    ? '<div style="font-size:10px;color:var(--muted);">No trades yet.</div>'
+    : recent.map(t => {
+        const pnl = parseFloat(t.pnl)||0;
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);" onclick="viewTrade(${t.id})">
+          <div>
+            <div style="font-size:11px;font-family:var(--sans);font-weight:700;">${t.title||'Trade'}</div>
+            <div style="font-size:9px;color:var(--muted);">${t.date}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="badge badge-${t.result}">${(t.result||'').toUpperCase()}</span>
+            <span style="font-size:11px;color:${pnl>=0?'var(--win)':'var(--loss)'};">${pnl>=0?'+':''}$${Math.abs(pnl).toFixed(0)}</span>
+          </div>
+        </div>`;
+      }).join('');
+}
+
+async function deleteMemory(type, idx) {
+  const list = type === 'pattern' ? MEMORY.patterns : MEMORY.mistakes;
+  const content = list[idx];
+  const raw = MEMORY._raw || [];
+  const entry = raw.find(r => r.type === type && r.content === content);
+  if (entry) {
+    try { await sb('DELETE','alpha_memory','',`?id=eq.${entry.id}`); } catch(e) {}
+  }
+  list.splice(idx,1);
+  renderDashboard();
+}
+
+// ═══════════════════════════════════════════════
+// JOURNAL
+// ═══════════════════════════════════════════════
+function renderGallery() {
+  const el = document.getElementById('trade-gallery');
+  if (TRADES.length === 0) {
+    el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);font-size:11px;">NO TRADES LOGGED YET</div>';
+    return;
+  }
+  el.innerHTML = TRADES.map(t => {
+    const pnl = parseFloat(t.pnl)||0;
+    const img = (t.htf_images||[])[0] || null;
+    return `<div class="trade-card ${t.result==='win'?'winner':'loser'} fade-in" onclick="viewTrade(${t.id})">
+      <div class="tc-img">${img?`<img src="${img}" alt="chart">`:'📊'}</div>
+      <div class="tc-body">
+        <div class="tc-title">${t.title||'Trade'}</div>
+        <div class="tc-meta">
+          <span class="badge badge-${t.result}">${(t.result||'').toUpperCase()}</span>
+          <span class="tc-pnl ${pnl>=0?'pos':'neg'}">${pnl>=0?'+':''}$${Math.abs(pnl).toFixed(0)}</span>
+        </div>
+        <div style="font-size:9px;color:var(--muted);margin-top:6px;">${t.date}</div>
+        ${t.alpha_grade?'<div style="font-size:8px;color:var(--purple);margin-top:4px;">⚡ Graded</div>':''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openLogModal() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('lt-date').value = today;
+  document.getElementById('lt-title').value = '';
+  document.getElementById('lt-bias').value = '';
+  document.getElementById('lt-valid').value = '';
+  document.getElementById('lt-result').value = 'win';
+  document.getElementById('lt-pnl').value = '';
+  document.getElementById('lt-profile').value = '';
+  document.getElementById('lt-mistakes').value = '';
+  document.getElementById('lt-lesson').value = '';
+  document.getElementById('log-modal').classList.add('open');
+}
+function closeLogModal() { document.getElementById('log-modal').classList.remove('open'); }
+
+async function saveTrade() {
+  const date = document.getElementById('lt-date').value;
+  const title = document.getElementById('lt-title').value || 'Trade ' + date;
+  if (!date) { alert('Set a date.'); return; }
+
+  const trade = {
+    id: Date.now(),
+    date,
+    title,
+    result: document.getElementById('lt-result').value,
+    pnl: parseFloat(document.getElementById('lt-pnl').value) || 0,
+    bias: document.getElementById('lt-bias').value,
+    valid: document.getElementById('lt-valid').value,
+    htf_images: [],
+    blocks: [{
+      result: document.getElementById('lt-result').value,
+      pnl: parseFloat(document.getElementById('lt-pnl').value) || 0,
+      dailyProfile: document.getElementById('lt-profile').value,
+      mistakes: [{text: document.getElementById('lt-mistakes').value}].filter(m=>m.text),
+      lesson: document.getElementById('lt-lesson').value
+    }]
+  };
+
+  setSyncStatus('⟳ SAVING...');
+  try {
+    await sb('POST','trades',{
+      id: trade.id, date: trade.date, title: trade.title,
+      result: trade.result, pnl: trade.pnl,
+      bias: trade.bias, valid: trade.valid,
+      htf_images: trade.htf_images, blocks: trade.blocks
+    });
+    TRADES.unshift(trade);
+    closeLogModal();
+    renderGallery();
+    renderDashboard();
+    setSyncStatus('✓ SYNCED');
+    autoGrade(trade.id);
+  } catch(e) {
+    setSyncStatus('✗ ERROR');
+    alert('Save failed: ' + e.message);
+  }
+}
+
+function viewTrade(id) {
+  const t = TRADES.find(x => x.id === id);
+  if (!t) return;
+  currentViewId = id;
+  document.getElementById('view-title').textContent = (t.title||'Trade') + ' — ' + t.date;
+  const pnl = parseFloat(t.pnl)||0;
+  const blocks = t.blocks || [];
+  const b = blocks[0] || {};
+  const mistakes = (b.mistakes||[]).map(m => m.text||m).filter(Boolean).join(', ');
+
+  document.getElementById('view-body').innerHTML = `
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;">
+      <span class="badge badge-${t.result}">${(t.result||'').toUpperCase()}</span>
+      <span style="font-size:18px;font-weight:800;color:${pnl>=0?'var(--win)':'var(--loss)'};">${pnl>=0?'+':''}$${Math.abs(pnl).toFixed(0)}</span>
+      <span style="font-size:10px;color:var(--muted);">${t.date}</span>
+    </div>
+    ${t.bias?`<div style="margin-bottom:12px;"><div style="font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:4px;">HTF BIAS</div><div style="font-size:11px;line-height:1.7;">${t.bias}</div></div>`:''}
+    ${t.valid?`<div style="margin-bottom:12px;"><div style="font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:4px;">VALID REASON</div><div style="font-size:11px;line-height:1.7;">${t.valid}</div></div>`:''}
+    ${b.dailyProfile?`<div style="margin-bottom:12px;"><div style="font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:4px;">PROFILE</div><div style="font-size:11px;">${b.dailyProfile}</div></div>`:''}
+    ${mistakes?`<div style="margin-bottom:12px;"><div style="font-size:9px;color:var(--loss);letter-spacing:2px;margin-bottom:4px;">MISTAKES</div><div style="font-size:11px;line-height:1.7;">${mistakes}</div></div>`:''}
+    ${b.lesson?`<div style="margin-bottom:16px;"><div style="font-size:9px;color:var(--gold);letter-spacing:2px;margin-bottom:4px;">LESSON</div><div style="font-size:11px;line-height:1.7;color:var(--gold);">${b.lesson}</div></div>`:''}
+    ${t.alpha_grade
+      ? `<div style="background:rgba(192,132,252,0.06);border:1px solid rgba(192,132,252,0.3);border-radius:8px;padding:14px;margin-top:8px;"><div style="font-size:9px;color:var(--purple);letter-spacing:2px;margin-bottom:8px;">⚡ ALPHA GRADE</div><div style="font-size:11px;line-height:1.9;white-space:pre-wrap;">${t.alpha_grade}</div></div>`
+      : `<div style="font-size:10px;color:var(--muted);padding:12px;background:var(--bg3);border-radius:6px;">⏳ Alpha is grading this trade...</div>`
+    }
+  `;
+  document.getElementById('view-modal').classList.add('open');
+}
+
+function closeViewModal() { document.getElementById('view-modal').classList.remove('open'); }
+
+async function deleteTrade() {
+  if (!currentViewId || !confirm('Delete this trade?')) return;
+  try {
+    await sb('DELETE','trades','',`?id=eq.${currentViewId}`);
+    TRADES = TRADES.filter(t => t.id !== currentViewId);
+    closeViewModal();
+    renderGallery();
+    renderDashboard();
+    setSyncStatus('✓ SYNCED');
+  } catch(e) { alert('Delete failed: ' + e.message); }
+}
+
+// ═══════════════════════════════════════════════
+// KNOWLEDGE BASE
+// ═══════════════════════════════════════════════
+function renderKB() {
+  const el = document.getElementById('kb-list');
+  if (KB_ENTRIES.length === 0) {
+    el.innerHTML = '<div style="font-size:10px;color:var(--muted);padding:20px;text-align:center;">No entries yet. Add concepts, rules, and notes.</div>';
+    return;
+  }
+  const colors = { concept: 'var(--accent)', rule: 'var(--purple)', note: 'var(--gold)' };
+  el.innerHTML = KB_ENTRIES.map(e => `
+    <div class="card" style="margin-bottom:10px;">
+      <div class="card-header">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:9px;color:${colors[e.type]||'var(--muted)'};letter-spacing:2px;text-transform:uppercase;">${e.type}</span>
+          <span style="font-family:var(--sans);font-size:12px;font-weight:700;">${e.title}</span>
+        </div>
+        <button onclick="deleteKB(${e.id})" class="btn btn-sm btn-danger">✕</button>
+      </div>
+      <div class="card-body" style="font-size:11px;line-height:1.7;color:var(--text);">${e.content}</div>
+    </div>`).join('');
+}
+
+function openKBModal() { document.getElementById('kb-modal').classList.add('open'); }
+function closeKBModal() { document.getElementById('kb-modal').classList.remove('open'); }
+
+async function saveKB() {
+  const type = document.getElementById('kb-type').value;
+  const title = document.getElementById('kb-title').value.trim();
+  const content = document.getElementById('kb-content').value.trim();
+  if (!title || !content) { alert('Fill in title and content.'); return; }
+  setSyncStatus('⟳ SAVING...');
+  try {
+    const res = await sb('POST','knowledge',{type,title,content,images:[]});
+    KB_ENTRIES.push(res[0]);
+    closeKBModal();
+    renderKB();
+    setSyncStatus('✓ SYNCED');
+    document.getElementById('kb-title').value = '';
+    document.getElementById('kb-content').value = '';
+  } catch(e) { setSyncStatus('✗ ERROR'); alert('Save failed: ' + e.message); }
+}
+
+async function deleteKB(id) {
+  if (!confirm('Delete this KB entry?')) return;
+  try {
+    await sb('DELETE','knowledge','',`?id=eq.${id}`);
+    KB_ENTRIES = KB_ENTRIES.filter(e => e.id !== id);
+    renderKB();
+  } catch(e) { alert('Delete failed: ' + e.message); }
+}
+
+// ═══════════════════════════════════════════════
+// KB CONTEXT BUILDER
+// ═══════════════════════════════════════════════
+function buildKBContext() {
+  const allKB = KB_ENTRIES.map(e => `${e.title}: ${e.content}`).join('\n');
+  const memStr = [
+    ...MEMORY.patterns.map(p => `GOOD PATTERN: ${p}`),
+    ...MEMORY.mistakes.map(m => `RECURRING MISTAKE: ${m}`)
+  ].join('\n');
+  return { allKB, memStr };
+}
+
+function buildSystemPrompt() {
+  const { allKB, memStr } = buildKBContext();
+  let p = `You are Alpha — a professional ICT futures trading agent and mentor.\n\n`;
+  p += `PERSONALITY: Direct, sharp, professional. Casual and human — like a trusted trading partner. Never use Arabic words or Islamic phrases. English only.\n\n`;
+  p += `RULES: NQ/ES/MNQ/MES futures only. NY AM 9:30-11:00 ET only. Max 2 trades/day. Min 2R. Max 1% risk. ~$25k account.\n\n`;
+  p += `CISD: 1min candle closes above/below OB — fast and crisp. Must occur on BOTH NQ and ES simultaneously. Multi-TF = max conviction.\n\n`;
+  p += `SMT: NQ/ES divergence. TRUE REVERSAL = SMT + full inversion. SICK SISTER = both agreed, one lags, no inversion = continuation.\n\n`;
+  p += `FVG: 3-candle void. IFVG: FVG fully closed through = flips nature. OB: Candle(s) against expansion. BRK: Inverted OB — needs sweep before expansion.\n\n`;
+  p += `WEEKLY PROFILES: Classic Expansion (M|E|E|E|P) — Tuesday MUST sweep external. Mid-Week Reversal, Consolidation Reversal, Trend Week, No Profile = avoid.\n\n`;
+  p += `DAILY PROFILES: London Classic, London Retracement, NYO Reversal, NYO Manipulation PO3, NYO Protraction. Seek & Destroy = NO TRADE.\n\n`;
+  p += `CONFLUENCE STACK: DOL clear + Weekly profile + Daily profile + Key time + External liq swept + SMT confirmed + BRK/OB reclaimed + CISD fast+crisp both NQ+ES + Multi-TF CISD + FVG/IFVG between entry and DOL.\n\n`;
+  if (allKB) p += `TRADER KB:\n${allKB}\n\n`;
+  if (memStr) p += `TRADER PATTERNS:\n${memStr}\n\n`;
+  p += `Give complete, direct answers. Use full knowledge on every response.`;
+  return p;
+}
+
+// ═══════════════════════════════════════════════
+// AI CHAT
+// ═══════════════════════════════════════════════
+async function callAI(messages) {
+  let lastErr = '';
+  for (const model of AI_MODELS) {
+    try {
+      const res = await fetch('https://ollama.com/api/chat', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${AI_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ model, messages, stream: false })
+      });
+      const data = await res.json();
+      if (data.message?.content) return data.message.content;
+      if (data.choices?.[0]?.message?.content) return data.choices[0].message.content;
+      if (data.error) throw new Error(data.error);
+      throw new Error('Unknown response');
+    } catch(e) {
+      lastErr = e.message;
+      if (e.message.includes('401') || e.message.includes('403')) throw e;
+    }
+  }
+  throw new Error('All models failed: ' + lastErr);
+}
+
+async function checkAI() {
+  try {
+    const res = await fetch('https://ollama.com/api/tags', {
+      headers: { 'Authorization': `Bearer ${AI_KEY}` }
+    });
+    if (res.ok) {
+      document.getElementById('dot').classList.add('online');
+      document.getElementById('dot-label').textContent = 'ONLINE';
+    } else {
+      document.getElementById('dot-label').textContent = 'OFFLINE';
+    }
+  } catch(e) {
+    document.getElementById('dot-label').textContent = 'OFFLINE';
+  }
+}
+
+function appendMsg(role, html, isHTML) {
+  const msgs = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = `msg ${role} fade-in`;
+  div.innerHTML = `<div class="msg-label">${role === 'user' ? 'You' : 'Alpha'}</div><div class="msg-bubble">${isHTML ? html : html.replace(/</g,'&lt;')}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+function appendTyping() {
+  const msgs = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'msg ai fade-in';
+  div.id = 'typing-' + Date.now();
+  div.innerHTML = `<div class="msg-label">Alpha</div><div class="msg-bubble"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div.id;
+}
+
+function removeTyping(id) { const el = document.getElementById(id); if (el) el.remove(); }
+
+async function sendMsg() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  appendMsg('user', text, false);
+  chatHistory.push({ role: 'user', content: text });
+  const tid = appendTyping();
+  try {
+    const messages = [{ role: 'system', content: buildSystemPrompt() }, ...chatHistory.slice(-10)];
+    const reply = await callAI(messages);
+    removeTyping(tid);
+    appendMsg('ai', reply, false);
+    chatHistory.push({ role: 'assistant', content: reply });
+    autoExtract(reply);
+  } catch(e) {
+    removeTyping(tid);
+    appendMsg('ai', 'Error: ' + e.message, false);
+  }
+}
+
+function clearChat() {
+  chatHistory = [];
+  document.getElementById('chat-messages').innerHTML = `<div class="msg ai fade-in"><div class="msg-label">Alpha</div><div class="msg-bubble">Chat cleared. What are we working on?</div></div>`;
+}
+
+// ═══════════════════════════════════════════════
+// AUTO EXTRACT MEMORY
+// ═══════════════════════════════════════════════
+async function autoExtract(text) {
+  const patternTriggers = ['good pattern','you tend to','you consistently','strength is','you always'];
+  const mistakeTriggers = ['recurring mistake','you keep','avoid this','stop doing','mistake pattern'];
+  const lower = text.toLowerCase();
+  let found = false;
+  for (const t of patternTriggers) {
+    if (lower.includes(t)) {
+      const sent = text.split(/[.!?]/).find(s => s.toLowerCase().includes(t));
+      if (sent && sent.trim().length > 20) {
+        try {
+          const res = await sb('POST','alpha_memory',{type:'pattern',content:sent.trim()});
+          MEMORY.patterns.push(sent.trim());
+          if (res?.[0]) MEMORY._raw.push(res[0]);
+          found = true;
+        } catch(e) {}
+      }
+    }
+  }
+  for (const t of mistakeTriggers) {
+    if (lower.includes(t)) {
+      const sent = text.split(/[.!?]/).find(s => s.toLowerCase().includes(t));
+      if (sent && sent.trim().length > 20) {
+        try {
+          const res = await sb('POST','alpha_memory',{type:'mistake',content:sent.trim()});
+          MEMORY.mistakes.push(sent.trim());
+          if (res?.[0]) MEMORY._raw.push(res[0]);
+          found = true;
+        } catch(e) {}
+      }
+    }
+  }
+  if (found) renderDashboard();
+}
+
+// ═══════════════════════════════════════════════
+// AUTO GRADE
+// ═══════════════════════════════════════════════
+async function autoGrade(tradeId) {
+  try {
+    const t = TRADES.find(x => x.id === tradeId);
+    if (!t) return;
+    const { allKB } = buildKBContext();
+    const b = (t.blocks||[])[0] || {};
+    const mistakes = (b.mistakes||[]).map(m => m.text||m).join(', ');
+    const prompt = `You are Alpha, elite ICT trading coach. Grade this trade strictly.
+
+TRADE: ${t.title} on ${t.date}
+Result: ${t.result.toUpperCase()} | PnL: $${t.pnl}
+HTF Bias: ${t.bias||'none'}
+Valid Reason: ${t.valid||'none'}
+Profile: ${b.dailyProfile||'none'}
+Mistakes: ${mistakes||'none'}
+Lesson: ${b.lesson||'none'}
+${allKB ? `TRADER KB: ${allKB}` : ''}
+
+Respond EXACTLY in this format:
+GRADE: X/10
+SETUP: one line
+BEST: one line
+WORST: one line
+FIX: one line
+VERDICT: one brutal sentence`;
+
+    const grade = await callAI([
+      { role: 'system', content: 'You are Alpha, elite ICT trading coach. Be direct and brutally honest.' },
+      { role: 'user', content: prompt }
+    ]);
+
+    await sb('PATCH','trades',{ alpha_grade: grade },`?id=eq.${tradeId}`);
+    const idx = TRADES.findIndex(x => x.id === tradeId);
+    if (idx > -1) TRADES[idx].alpha_grade = grade;
+    renderGallery();
+  } catch(e) { console.log('Auto-grade failed:', e.message); }
+}
+
+// ═══════════════════════════════════════════════
+// MORNING BRIEFING
+// ═══════════════════════════════════════════════
+async function morningBriefing() {
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const todayName = days[new Date().getDay()];
+  appendMsg('user', `☀ Morning Briefing — ${todayName}`, true);
+  const tid = appendTyping();
+  try {
+    const { allKB, memStr } = buildKBContext();
+    const last5 = TRADES.slice(0,5).map(t => {
+      const b = (t.blocks||[])[0]||{};
+      const mistakes = (b.mistakes||[]).map(m=>m.text||m).join(', ');
+      return `${t.date} ${t.title} [${t.result.toUpperCase()} $${t.pnl}] Mistakes: ${mistakes||'none'} Lesson: ${b.lesson||'none'}`;
+    }).join('\n');
+    const prompt = `Give a sharp morning trading briefing for ${todayName}.
+
+LAST 5 TRADES:\n${last5||'None yet'}
+${memStr?`\nKNOWN PATTERNS:\n${memStr}`:''}
+${allKB?`\nTRADER KB:\n${allKB}`:''}
+
+Sections:
+📅 TODAY — likely profiles for ${todayName}, what to watch
+⚠ WATCH OUT — top 2 mistakes from recent history to avoid
+✅ CHECKLIST — 3 sharp reminders before entering
+🎯 MINDSET — one sentence
+
+Max 150 words. Direct and sharp.`;
+    const reply = await callAI([{ role:'system', content: buildSystemPrompt() },{ role:'user', content: prompt }]);
+    removeTyping(tid);
+    appendMsg('ai', reply, false);
+    autoExtract(reply);
+  } catch(e) { removeTyping(tid); appendMsg('ai','Briefing failed: '+e.message,false); }
+}
+
+// ═══════════════════════════════════════════════
+// POST SESSION DEBRIEF
+// ═══════════════════════════════════════════════
+async function postSessionDebrief() {
+  const today = new Date().toISOString().split('T')[0];
+  const todayTrades = TRADES.filter(t => t.date === today);
+  appendMsg('user', '🌙 Post-Session Debrief', true);
+  const tid = appendTyping();
+  try {
+    const { allKB, memStr } = buildKBContext();
+    const tradesText = todayTrades.length === 0 ? 'No trades taken today.' :
+      todayTrades.map(t => {
+        const b=(t.blocks||[])[0]||{};
+        const mistakes=(b.mistakes||[]).map(m=>m.text||m).join(', ');
+        return `${t.title} [${t.result.toUpperCase()} $${t.pnl}] Profile: ${b.dailyProfile||'?'} Mistakes: ${mistakes||'none'} Lesson: ${b.lesson||'none'}`;
+      }).join('\n');
+    const prompt = `Post-session debrief for ${today}.
+
+TODAY'S TRADES:\n${tradesText}
+${memStr?`\nKNOWN PATTERNS: ${memStr}`:''}
+${allKB?`\nTRADER KB: ${allKB}`:''}
+
+Sections:
+📊 SESSION SUMMARY
+✅ WHAT YOU DID RIGHT
+❌ WHAT WENT WRONG
+📚 STUDY TONIGHT — specific concept or KB entry
+🎯 TOMORROW'S FOCUS
+
+Max 180 words. Reference actual trades and KB.`;
+    const reply = await callAI([{ role:'system', content: buildSystemPrompt() },{ role:'user', content: prompt }]);
+    removeTyping(tid);
+    appendMsg('ai', reply, false);
+    autoExtract(reply);
+  } catch(e) { removeTyping(tid); appendMsg('ai','Debrief failed: '+e.message,false); }
+}
+
+// ═══════════════════════════════════════════════
+// QUIZ
+// ═══════════════════════════════════════════════
+async function newQuestion() {
+  const qEl = document.getElementById('quiz-q');
+  const aEl = document.getElementById('quiz-a');
+  const btn = document.getElementById('quiz-submit');
+  const fb = document.getElementById('quiz-feedback');
+  qEl.textContent = '⏳ Generating...';
+  if (aEl) { aEl.style.display='none'; aEl.value=''; }
+  if (btn) btn.style.display='none';
+  if (fb) fb.innerHTML='';
+  try {
+    const { allKB, memStr } = buildKBContext();
+    const prompt = `You are Alpha quizzing this trader. Generate ONE specific challenging question about any part of their model or KB.
+
+ICT KNOWLEDGE: CISD (1min fast crisp, both NQ+ES simultaneously, multi-TF), SMT (full inversion = reversal, no inversion = sick sister), FVG/IFVG, OB/BRK, Weekly Profiles, Daily Profiles, Confluence stack, DOL.
+${allKB?`\nTRADER KB: ${allKB}`:''}
+${memStr?`\nKNOWN PATTERNS: ${memStr}`:''}
+
+Write the question ONLY. No preamble, no answer.`;
+    const reply = await callAI([{ role:'user', content: prompt }]);
+    currentQuiz = reply.trim();
+    qEl.textContent = currentQuiz;
+    if (aEl) { aEl.style.display='block'; aEl.focus(); }
+    if (btn) btn.style.display='block';
+  } catch(e) { qEl.textContent = 'Error: ' + e.message; }
+}
+
+async function submitAnswer() {
+  const aEl = document.getElementById('quiz-a');
+  const fb = document.getElementById('quiz-feedback');
+  const btn = document.getElementById('quiz-submit');
+  const answer = aEl?.value.trim();
+  if (!answer) return;
+  if (btn) btn.disabled = true;
+  fb.innerHTML = '<span style="color:var(--muted)">⏳ Grading...</span>';
+  try {
+    const { allKB } = buildKBContext();
+    const prompt = `Grade this quiz answer. Be direct and educational.
+
+QUESTION: ${currentQuiz}
+ANSWER: ${answer}
+
+ICT CONTEXT: CISD, SMT, FVG/IFVG, OB/BRK, profiles, confluence stack, DOL.
+${allKB?`TRADER KB: ${allKB}`:''}
+
+Start with CORRECT, PARTIAL, or WRONG. Then explain. Max 120 words.`;
+    const reply = await callAI([{ role:'user', content: prompt }]);
+    const isCorrect = reply.toUpperCase().startsWith('CORRECT');
+    const isPartial = reply.toUpperCase().startsWith('PARTIAL');
+    const color = isCorrect ? 'var(--win)' : isPartial ? 'var(--gold)' : 'var(--loss)';
+    const label = isCorrect ? '✓ CORRECT' : isPartial ? '◑ PARTIAL' : '✗ WRONG';
+    const body = reply.replace(/^(CORRECT|PARTIAL|WRONG)[:\s-]*/i,'');
+    fb.innerHTML = `<div style="color:${color};font-weight:700;margin-bottom:6px;">${label}</div><div style="color:var(--text);">${body}</div>`;
+    if (btn) btn.disabled = false;
+  } catch(e) { fb.textContent = 'Error: '+e.message; if (btn) btn.disabled=false; }
+}
+
+// ═══════════════════════════════════════════════
+// WEEKLY REVIEW
+// ═══════════════════════════════════════════════
+async function weeklyReview() {
+  const el = document.getElementById('review-content');
+  el.innerHTML = '<span style="color:var(--muted)">⏳ Alpha is reviewing your week...</span>';
+  try {
+    const now = new Date();
+    const day = now.getDay();
+    const diff = now.getDate() - day + (day===0?-6:1);
+    const weekStart = new Date(now);
+    weekStart.setDate(diff); weekStart.setHours(0,0,0,0);
+    const weekStartStr = weekStart.toISOString().split('T')[0];
+    const weekTrades = TRADES.filter(t => t.date >= weekStartStr);
+    const { allKB, memStr } = buildKBContext();
+
+    const tradesText = weekTrades.length === 0 ? 'No trades this week.' :
+      weekTrades.map(t => {
+        const b=(t.blocks||[])[0]||{};
+        const mistakes=(b.mistakes||[]).map(m=>m.text||m).join(', ');
+        return `${t.date} — ${t.title} [${t.result.toUpperCase()} $${t.pnl}] Profile: ${b.dailyProfile||'?'} Mistakes: ${mistakes||'none'} Lesson: ${b.lesson||'none'}`;
+      }).join('\n');
+
+    const prompt = `Write a structured weekly trading review.
+
+WEEK: ${weekStartStr} to ${now.toISOString().split('T')[0]}
+TRADES:\n${tradesText}
+${memStr?`\nKNOWN PATTERNS: ${memStr}`:''}
+${allKB?`\nTRADER FULL KB: ${allKB}`:''}
+
+Sections:
+📊 WEEK SUMMARY — numbers, win rate, PnL
+🏆 BEST TRADE — which and why
+❌ WORST TRADE — what went wrong exactly
+🔍 PATTERNS DETECTED — recurring right or wrong
+📚 STUDY FOCUS — specific KB concepts to review
+🎯 NEXT WEEK FOCUS — one sharp priority
+
+Max 250 words. Specific. Reference actual trades and KB entries.`;
+
+    const reply = await callAI([
+      { role:'system', content: 'You are Alpha, elite ICT trading coach. Write sharp specific weekly reviews.' },
+      { role:'user', content: prompt }
+    ]);
+    el.innerHTML = `<div style="white-space:pre-wrap;line-height:1.9;">${reply}</div><div style="font-size:9px;color:var(--muted);margin-top:10px;">Generated ${new Date().toLocaleString()}</div>`;
+  } catch(e) { el.innerHTML = `<span style="color:var(--loss)">Error: ${e.message}</span>`; }
+}
+
+// ═══════════════════════════════════════════════
+// TASKS
+// ═══════════════════════════════════════════════
+function renderTasks() {
+  const tasks = STATE.tasks || [];
+  const left = tasks.filter(t => !t.done).length;
+  document.getElementById('tasks-count').textContent = left + ' left';
+  document.getElementById('task-list').innerHTML = tasks.map((t,i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);">
+      <input type="checkbox" ${t.done?'checked':''} onchange="toggleTask(${i})" style="width:16px;height:16px;cursor:pointer;">
+      <span style="flex:1;font-size:11px;${t.done?'text-decoration:line-through;color:var(--muted)':''}">${t.text}</span>
+      <button onclick="deleteTask(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;">×</button>
+    </div>`).join('');
+}
+
+async function addTask() {
+  const input = document.getElementById('task-input');
+  const text = input.value.trim();
+  if (!text) return;
+  STATE.tasks.push({ text, done: false });
+  input.value = '';
+  renderTasks();
+  await saveState('tasks', STATE.tasks);
+}
+
+async function toggleTask(i) {
+  STATE.tasks[i].done = !STATE.tasks[i].done;
+  renderTasks();
+  await saveState('tasks', STATE.tasks);
+}
+
+async function deleteTask(i) {
+  STATE.tasks.splice(i,1);
+  renderTasks();
+  await saveState('tasks', STATE.tasks);
+}
+
+// ═══════════════════════════════════════════════
+// HABITS
+// ═══════════════════════════════════════════════
+function renderHabits() {
+  const habits = Object.values(STATE.habits || {});
+  const today = new Date().toISOString().split('T')[0];
+  const done = habits.filter(h => (h.completions||[]).includes(today)).length;
+  document.getElementById('habits-count').textContent = `${done}/${habits.length} today`;
+  document.getElementById('habit-list').innerHTML = habits.map(h => {
+    const isDone = (h.completions||[]).includes(today);
+    const streak = calcStreak(h.completions||[]);
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);">
+      <input type="checkbox" ${isDone?'checked':''} onchange="toggleHabit('${h.id}')" style="width:18px;height:18px;cursor:pointer;">
+      <div style="flex:1;">
+        <div style="font-size:11px;${isDone?'color:var(--muted);text-decoration:line-through;':''}">${h.name}</div>
+        <div style="font-size:9px;color:var(--gold);">🔥 ${streak} day streak</div>
+      </div>
+      <button onclick="deleteHabit('${h.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;">×</button>
+    </div>`;
+  }).join('');
+}
+
+function calcStreak(completions) {
+  if (!completions.length) return 0;
+  const sorted = [...completions].sort().reverse();
+  let streak = 0;
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  for (const c of sorted) {
+    const cd = new Date(c); cd.setHours(0,0,0,0);
+    const diff = Math.round((d - cd)/(1000*60*60*24));
+    if (diff === streak) streak++;
+    else break;
+  }
+  return streak;
+}
+
+async function addHabit() {
+  const input = document.getElementById('habit-input');
+  const name = input.value.trim();
+  if (!name) return;
+  const id = 'h' + Date.now();
+  if (!STATE.habits) STATE.habits = {};
+  STATE.habits[id] = { id, name, completions: [] };
+  input.value = '';
+  renderHabits();
+  await saveState('habits', STATE.habits);
+}
+
+async function toggleHabit(id) {
+  const today = new Date().toISOString().split('T')[0];
+  const h = STATE.habits[id];
+  if (!h) return;
+  if (!h.completions) h.completions = [];
+  if (h.completions.includes(today)) {
+    h.completions = h.completions.filter(d => d !== today);
+  } else {
+    h.completions.push(today);
+  }
+  renderHabits();
+  await saveState('habits', STATE.habits);
+}
+
+async function deleteHabit(id) {
+  delete STATE.habits[id];
+  renderHabits();
+  await saveState('habits', STATE.habits);
+}
+
+// ═══════════════════════════════════════════════
+// POMODORO — wall-clock accurate
+// ═══════════════════════════════════════════════
+function getFocusDur() { return parseInt(document.getElementById('pomo-focus')?.value)||25; }
+function getBreakDur() { return parseInt(document.getElementById('pomo-break')?.value)||5; }
+
+function updatePomoDisplay() {
+  const m = String(Math.floor(pomoSecondsLeft/60)).padStart(2,'0');
+  const s = String(pomoSecondsLeft%60).padStart(2,'0');
+  const el = document.getElementById('pomo-display');
+  const bar = document.getElementById('pomo-bar');
+  const phase = document.getElementById('pomo-phase');
+  if (el) el.textContent = m + ':' + s;
+  if (bar) bar.style.width = (((pomoTotalSeconds-pomoSecondsLeft)/pomoTotalSeconds)*100) + '%';
+  if (phase) { phase.textContent = pomoPhase==='focus'?'● FOCUS':'● BREAK'; phase.style.color = pomoPhase==='focus'?'var(--purple)':'var(--accent3)'; }
+}
+
+function tick() {
+  if (!pomoRunning) return;
+  pomoSecondsLeft = Math.max(0, Math.round((pomoEndTime - Date.now())/1000));
+  updatePomoDisplay();
+  if (pomoSecondsLeft <= 0) {
+    pomoRunning = false; pomoEndTime = null;
+    const btn = document.getElementById('pomo-btn');
+    if (btn) { btn.textContent='▶ Start'; }
+    if (pomoPhase === 'focus') {
+      recordPomoSession();
+      pomoPhase = 'break'; pomoSecondsLeft = getBreakDur()*60; pomoTotalSeconds = pomoSecondsLeft;
+    } else {
+      pomoPhase = 'focus'; pomoSecondsLeft = getFocusDur()*60; pomoTotalSeconds = pomoSecondsLeft;
+    }
+    updatePomoDisplay(); return;
+  }
+  setTimeout(tick, 500);
+}
+
+function togglePomo() {
+  const btn = document.getElementById('pomo-btn');
+  if (!pomoRunning) {
+    const sel = document.getElementById('pomo-select');
+    if (!sel?.value) { alert('Select a subject first!'); return; }
+    pomoRunning = true;
+    pomoEndTime = Date.now() + (pomoSecondsLeft*1000);
+    if (btn) btn.textContent = '⏸ Pause';
+    setTimeout(tick, 500);
+  } else {
+    pomoSecondsLeft = Math.max(0, Math.round((pomoEndTime-Date.now())/1000));
+    pomoRunning = false; pomoEndTime = null;
+    if (btn) btn.textContent = '▶ Start';
+  }
+}
+
+function resetPomo() {
+  pomoRunning = false; pomoEndTime = null; pomoPhase = 'focus';
+  pomoSecondsLeft = getFocusDur()*60; pomoTotalSeconds = pomoSecondsLeft;
+  const btn = document.getElementById('pomo-btn');
+  if (btn) btn.textContent = '▶ Start';
+  updatePomoDisplay();
+}
+
+async function recordPomoSession() {
+  const sel = document.getElementById('pomo-select');
+  const id = sel?.value;
+  if (!id || !pomoSubjects[id]) return;
+  const today = new Date().toISOString().split('T')[0];
+  if (!pomoSubjects[id].sessions) pomoSubjects[id].sessions = [];
+  pomoSubjects[id].sessions.push({ date: today, minutes: getFocusDur() });
+  STATE.pomodoro = pomoSubjects;
+  await saveState('pomodoro', pomoSubjects);
+  const todaySessions = Object.values(pomoSubjects).flatMap(s=>(s.sessions||[]).filter(x=>x.date===today)).length;
+  const el = document.getElementById('pomo-sessions');
+  if (el) el.textContent = 'Sessions today: ' + todaySessions;
+}
+
+function renderPomoSelect() {
+  const sel = document.getElementById('pomo-select');
+  if (!sel) return;
+  const subjects = Object.values(pomoSubjects||{});
+  sel.innerHTML = '<option value="">— Select —</option>' +
+    subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+}
+
+async function addPomoSubject() {
+  const input = document.getElementById('pomo-new');
+  const name = input.value.trim();
+  if (!name) return;
+  const id = 'ps' + Date.now();
+  if (!pomoSubjects) pomoSubjects = {};
+  pomoSubjects[id] = { id, name, sessions: [] };
+  STATE.pomodoro = pomoSubjects;
+  input.value = '';
+  renderPomoSelect();
+  await saveState('pomodoro', pomoSubjects);
+}
+
+// ═══════════════════════════════════════════════
+// SERVICE WORKER
+// ═══════════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(e => console.log('SW:', e));
+}
+
+// ═══════════════════════════════════════════════
+// START
+// ═══════════════════════════════════════════════
+init();
+</script>
+</body>
+</html>
