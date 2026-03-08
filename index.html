@@ -472,8 +472,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 // ═══════════════════════════════════════════════
 // OLLAMA CLOUD CONFIG
 // ═══════════════════════════════════════════════
-const AI_KEY = 'f68ecd88ae114678ad6a8c0898360c02.n7kWW3t17BpgEfnmwj4Z7Ews';
-const AI_MODELS = ['qwen3.5:35b','qwen3.5:27b','gemma3:27b','qwen3.5:9b'];
+// AI handled by /api/chat proxy
 
 // ═══════════════════════════════════════════════
 // SUPABASE HELPERS
@@ -877,34 +876,28 @@ function buildSystemPrompt() {
 // AI CHAT
 // ═══════════════════════════════════════════════
 async function callAI(messages) {
-  let lastErr = '';
-  for (const model of AI_MODELS) {
-    try {
-      const res = await fetch('https://ollama.com/api/chat', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${AI_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ model, messages, stream: false })
-      });
-      const data = await res.json();
-      if (data.message?.content) return data.message.content;
-      if (data.choices?.[0]?.message?.content) return data.choices[0].message.content;
-      if (data.error) throw new Error(data.error);
-      throw new Error('Unknown response');
-    } catch(e) {
-      lastErr = e.message;
-      if (e.message.includes('401') || e.message.includes('403')) throw e;
-    }
+  // Call our Vercel proxy which forwards to Ollama Cloud server-side (bypasses CORS)
+  const res = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error || 'API error ' + res.status);
   }
-  throw new Error('All models failed: ' + lastErr);
+  const data = await res.json();
+  if (data.content) return data.content;
+  throw new Error(data.error || 'No content returned');
 }
 
 async function checkAI() {
   try {
-    const res = await fetch('https://ollama.com/api/tags', {
-      headers: { 'Authorization': `Bearer ${AI_KEY}` }
+    // Ping proxy with a minimal message to verify AI is reachable
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role: 'user', content: 'ping' }] })
     });
     if (res.ok) {
       document.getElementById('dot').classList.add('online');
